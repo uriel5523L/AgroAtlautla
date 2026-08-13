@@ -1,5 +1,6 @@
 package com.agroatlautla.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,6 +53,7 @@ fun ExpensesScreen(viewModel: AgroViewModel, onBack: () -> Unit, onAddExpense: (
     val expenses by viewModel.expenses.collectAsState()
     val total = expenses.sumOf { it.amount }
     val byCategory = expenses.groupBy { it.category }.mapValues { entry -> entry.value.sumOf { it.amount } }
+    var toDelete by remember { mutableStateOf<ExpenseEntity?>(null) }
 
     ScreenWithHeader(title = "Gastos", onBack = onBack, headerColor = AgroBrown) {
         item {
@@ -76,7 +80,7 @@ fun ExpensesScreen(viewModel: AgroViewModel, onBack: () -> Unit, onAddExpense: (
                 }
             }
         }
-        items(expenses) { expense -> ExpenseCard(expense) }
+        items(expenses) { expense -> ExpenseCard(expense, onDelete = { toDelete = expense }) }
         item {
             Button(
                 onClick = onAddExpense,
@@ -87,6 +91,23 @@ fun ExpensesScreen(viewModel: AgroViewModel, onBack: () -> Unit, onAddExpense: (
                 Text("Registrar gasto", fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    toDelete?.let { expense ->
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text("Eliminar gasto") },
+            text = { Text("¿Seguro que quieres eliminar \"${expense.concept}\" (-$${expense.amount})? Esta accion no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    toDelete = null
+                    viewModel.deleteExpense(expense.id)
+                }) { Text("Eliminar", color = AgroDanger, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { toDelete = null }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -185,7 +206,7 @@ private fun CategoryChip(category: String, amount: Int, modifier: Modifier = Mod
 }
 
 @Composable
-fun ExpenseCard(expense: ExpenseEntity) {
+fun ExpenseCard(expense: ExpenseEntity, onDelete: () -> Unit) {
     val color = expenseColor(expense.category)
     itemCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -200,6 +221,12 @@ fun ExpenseCard(expense: ExpenseEntity) {
                 }
             }
             Text("-${'$'}${expense.amount}", color = AgroDanger, fontWeight = FontWeight.Bold)
+            Text(
+                "✕",
+                color = AgroDanger,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onDelete).padding(start = 8.dp)
+            )
         }
     }
 }

@@ -10,10 +10,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,9 +61,10 @@ fun PestsScreen(viewModel: AgroViewModel, onPestSelected: (String) -> Unit) {
 }
 
 @Composable
-fun PestDetailScreen(viewModel: AgroViewModel, pestId: String, onBack: () -> Unit) {
+fun PestDetailScreen(viewModel: AgroViewModel, pestId: String, onBack: () -> Unit, onDeleted: () -> Unit = onBack) {
     val pests by viewModel.pests.collectAsState()
     val pest = pests.firstOrNull { it.id == pestId }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     ScreenWithHeader(title = "Detalle de Plaga", onBack = onBack, headerColor = AgroDanger) {
         if (pest == null) {
@@ -78,7 +87,34 @@ fun PestDetailScreen(viewModel: AgroViewModel, pestId: String, onBack: () -> Uni
             item { PestInfoBlock("SINTOMAS", knowledge.symptoms, AgroDanger) }
             item { PestInfoBlock("RECOMENDACIONES DE CONTROL", knowledge.recommendations, AgroWarning) }
             item { PestInfoBlock("PREVENCION", knowledge.prevention, AgroGreen) }
+            item {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AgroDanger),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Eliminar plaga", fontWeight = FontWeight.Bold)
+                }
+            }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar plaga") },
+            text = { Text("¿Seguro que quieres eliminar \"${pest?.name}\" del catalogo? Esta accion no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    viewModel.deletePest(pestId, onDeleted)
+                }) { Text("Eliminar", color = AgroDanger, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

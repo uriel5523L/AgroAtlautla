@@ -126,6 +126,7 @@ class AgroRepository(
             }
         }
         cloudRepository.downloadActivities(uid).forEach { cloud ->
+            if (database.syncQueueDao().hasPendingDelete("calendar_activities", cloud.id) > 0) return@forEach
             val local = database.calendarActivityDao().getById(cloud.id)
             when {
                 local == null -> {
@@ -147,10 +148,12 @@ class AgroRepository(
             }
         }
         cloudRepository.downloadPests(uid).forEach { cloud ->
+            if (database.syncQueueDao().hasPendingDelete("pests", cloud.id) > 0) return@forEach
             val existing = database.pestDao().getByName(cloud.name)
             if (existing == null) database.pestDao().insert(cloud)
         }
         cloudRepository.downloadExpenses(uid).forEach { cloud ->
+            if (database.syncQueueDao().hasPendingDelete("expenses", cloud.id) > 0) return@forEach
             val local = database.expenseDao().getById(cloud.id)
             when {
                 local == null -> {
@@ -184,14 +187,23 @@ class AgroRepository(
                         cloudRepository.uploadCrop(uid, it)
                     }
                 }
-                "calendar_activities" -> database.calendarActivityDao().getById(item.entityId)?.let {
-                    cloudRepository.uploadActivity(uid, it)
+                "calendar_activities" -> when (item.action) {
+                    "delete" -> cloudRepository.deleteActivity(uid, item.entityId)
+                    else -> database.calendarActivityDao().getById(item.entityId)?.let {
+                        cloudRepository.uploadActivity(uid, it)
+                    }
                 }
-                "pests" -> database.pestDao().getById(item.entityId)?.let {
-                    cloudRepository.uploadPest(uid, it)
+                "pests" -> when (item.action) {
+                    "delete" -> cloudRepository.deletePest(uid, item.entityId)
+                    else -> database.pestDao().getById(item.entityId)?.let {
+                        cloudRepository.uploadPest(uid, it)
+                    }
                 }
-                "expenses" -> database.expenseDao().getById(item.entityId)?.let {
-                    cloudRepository.uploadExpense(uid, it)
+                "expenses" -> when (item.action) {
+                    "delete" -> cloudRepository.deleteExpense(uid, item.entityId)
+                    else -> database.expenseDao().getById(item.entityId)?.let {
+                        cloudRepository.uploadExpense(uid, it)
+                    }
                 }
             }
             database.syncQueueDao().markSynced(item.id, System.currentTimeMillis())
@@ -207,6 +219,63 @@ class AgroRepository(
             )
         }
         database.cropDao().deleteById(cropId)
+    }
+
+    suspend fun updateCrop(
+        cropId: String,
+        name: String,
+        sowDate: String,
+        surfaceArea: String,
+        irrigationType: String,
+        notes: String
+    ) {
+        val current = database.cropDao().getById(cropId) ?: return
+        val cleanedArea = surfaceArea.trim().ifBlank { "Sin superficie asignada" }
+            .let { if (it.endsWith("ha")) it else "$it ha" }
+        if (!current.needsSync) {
+            database.syncQueueDao().insert(
+                SyncQueueEntity(entityName = "crops", entityId = cropId, action = "create")
+            )
+        }
+        database.cropDao().update(
+            current.copy(
+                name = name.ifBlank { current.name },
+                sowDate = sowDate.ifBlank { current.sowDate },
+                surfaceArea = cleanedArea,
+                irrigationType = irrigationType.ifBlank { current.irrigationType },
+                notes = notes,
+                updatedAt = System.currentTimeMillis(),
+                needsSync = true
+            )
+        )
+    }
+
+    suspend fun deleteActivity(activityId: String) {
+        val activity = database.calendarActivityDao().getById(activityId) ?: return
+        if (!activity.needsSync) {
+            database.syncQueueDao().insert(
+                SyncQueueEntity(entityName = "calendar_activities", entityId = activityId, action = "delete")
+            )
+        }
+        database.calendarActivityDao().deleteById(activityId)
+    }
+
+    suspend fun deleteExpense(expenseId: String) {
+        val expense = database.expenseDao().getById(expenseId) ?: return
+        if (!expense.needsSync) {
+            database.syncQueueDao().insert(
+                SyncQueueEntity(entityName = "expenses", entityId = expenseId, action = "delete")
+            )
+        }
+        database.expenseDao().deleteById(expenseId)
+    }
+
+    suspend fun deletePest(pestId: String) {
+        if (database.pestDao().getById(pestId) == null) return
+        database.syncQueueDao().insert(
+            SyncQueueEntity(entityName = "pests", entityId = pestId, action = "delete")
+        )
+        database.pestDao().deleteById(pestId)
     }
 
     companion object {

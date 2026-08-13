@@ -51,6 +51,30 @@ class CloudRepository(private val context: Context) {
             .await()
     }
 
+    suspend fun deleteActivity(uid: String, activityId: String) {
+        firestore(uid)
+            .collection("calendar_activities")
+            .document(activityId)
+            .delete()
+            .await()
+    }
+
+    suspend fun deletePest(uid: String, pestId: String) {
+        firestore(uid)
+            .collection("pests")
+            .document(pestId)
+            .delete()
+            .await()
+    }
+
+    suspend fun deleteExpense(uid: String, expenseId: String) {
+        firestore(uid)
+            .collection("expenses")
+            .document(expenseId)
+            .delete()
+            .await()
+    }
+
     suspend fun downloadCrops(uid: String): List<CropEntity> {
         return firestore(uid).collection("crops").get().await().documents.mapNotNull { doc ->
             val id = doc.getString("id") ?: doc.id

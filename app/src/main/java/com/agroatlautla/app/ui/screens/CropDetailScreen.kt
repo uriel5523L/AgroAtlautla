@@ -42,6 +42,7 @@ fun CropDetailScreen(
     viewModel: AgroViewModel,
     cropId: String,
     onBack: () -> Unit,
+    onEdit: () -> Unit = {},
     onDeleted: () -> Unit = onBack
 ) {
     val crops by viewModel.crops.collectAsState()
@@ -106,6 +107,16 @@ fun CropDetailScreen(
                             }
                         }
                     }
+                }
+            }
+            item {
+                OutlinedButton(
+                    onClick = onEdit,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AgroGreen),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Editar cultivo", fontWeight = FontWeight.Bold)
                 }
             }
             item {

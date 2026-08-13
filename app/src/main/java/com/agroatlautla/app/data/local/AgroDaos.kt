@@ -65,6 +65,9 @@ interface CalendarActivityDao {
 
     @Query("SELECT * FROM calendar_activities WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): CalendarActivityEntity?
+
+    @Query("DELETE FROM calendar_activities WHERE id = :id")
+    suspend fun deleteById(id: String)
 }
 
 @Dao
@@ -86,6 +89,9 @@ interface PestDao {
 
     @Query("SELECT * FROM pests WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): PestEntity?
+
+    @Query("DELETE FROM pests WHERE id = :id")
+    suspend fun deleteById(id: String)
 }
 
 @Dao
@@ -107,6 +113,9 @@ interface ExpenseDao {
 
     @Query("SELECT * FROM expenses WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): ExpenseEntity?
+
+    @Query("DELETE FROM expenses WHERE id = :id")
+    suspend fun deleteById(id: String)
 }
 
 @Dao

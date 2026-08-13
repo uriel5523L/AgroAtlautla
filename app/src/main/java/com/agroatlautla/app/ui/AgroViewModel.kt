@@ -167,6 +167,46 @@ class AgroViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateCrop(
+        cropId: String,
+        name: String,
+        sowDate: String,
+        irrigationType: String,
+        notes: String,
+        surfaceArea: String,
+        onSaved: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            agroRepository.updateCrop(cropId, name, sowDate, surfaceArea, irrigationType, notes)
+            message = "Cultivo actualizado y pendiente de sincronizacion."
+            onSaved()
+        }
+    }
+
+    fun deleteActivity(activityId: String, onDeleted: () -> Unit = {}) {
+        viewModelScope.launch {
+            agroRepository.deleteActivity(activityId)
+            message = "Actividad eliminada. La baja se sincronizara con tu cuenta."
+            onDeleted()
+        }
+    }
+
+    fun deleteExpense(expenseId: String, onDeleted: () -> Unit = {}) {
+        viewModelScope.launch {
+            agroRepository.deleteExpense(expenseId)
+            message = "Gasto eliminado. La baja se sincronizara con tu cuenta."
+            onDeleted()
+        }
+    }
+
+    fun deletePest(pestId: String, onDeleted: () -> Unit = {}) {
+        viewModelScope.launch {
+            agroRepository.deletePest(pestId)
+            message = "Plaga eliminada del catalogo. La baja se sincronizara con tu cuenta."
+            onDeleted()
+        }
+    }
+
     fun syncNow() {
         viewModelScope.launch {
             refreshNetworkStatus()

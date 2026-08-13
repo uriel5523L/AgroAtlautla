@@ -22,6 +22,7 @@ import com.agroatlautla.app.ui.screens.CalendarScreen
 import com.agroatlautla.app.ui.screens.CropDetailScreen
 import com.agroatlautla.app.ui.screens.CropsScreen
 import com.agroatlautla.app.ui.screens.DashboardScreen
+import com.agroatlautla.app.ui.screens.EditCropScreen
 import com.agroatlautla.app.ui.screens.ExpensesScreen
 import com.agroatlautla.app.ui.screens.LoginScreen
 import com.agroatlautla.app.ui.screens.PestDetailScreen
@@ -115,6 +116,17 @@ fun AgroApp(viewModel: AgroViewModel) {
                 )
             }
             composable(
+                route = "editCrop/{cropId}",
+                arguments = listOf(navArgument("cropId") { type = NavType.StringType })
+            ) { entry ->
+                EditCropScreen(
+                    viewModel = viewModel,
+                    cropId = entry.arguments?.getString("cropId") ?: "",
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+            composable(
                 route = "cropDetail/{cropId}",
                 arguments = listOf(navArgument("cropId") { type = NavType.StringType })
             ) { entry ->
@@ -122,6 +134,7 @@ fun AgroApp(viewModel: AgroViewModel) {
                     viewModel = viewModel,
                     cropId = entry.arguments?.getString("cropId") ?: "",
                     onBack = { navController.popBackStack() },
+                    onEdit = { navController.navigate("editCrop/${entry.arguments?.getString("cropId") ?: ""}") },
                     onDeleted = { navController.popBackStack() }
                 )
             }
@@ -151,7 +164,8 @@ fun AgroApp(viewModel: AgroViewModel) {
                 PestDetailScreen(
                     viewModel = viewModel,
                     pestId = entry.arguments?.getString("pestId") ?: "",
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onDeleted = { navController.popBackStack() }
                 )
             }
             composable("expenses") {

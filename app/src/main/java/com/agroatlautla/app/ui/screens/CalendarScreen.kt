@@ -1,5 +1,6 @@
 package com.agroatlautla.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,12 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +37,7 @@ import com.agroatlautla.app.ui.AgroViewModel
 import com.agroatlautla.app.ui.screens.components.AssistChipCompat
 import com.agroatlautla.app.ui.screens.components.ScreenWithHeader
 import com.agroatlautla.app.ui.screens.components.itemCard
+import com.agroatlautla.app.ui.theme.AgroDanger
 import com.agroatlautla.app.ui.theme.AgroGreen
 import com.agroatlautla.app.ui.theme.AgroInfo
 import com.agroatlautla.app.ui.theme.AgroMuted
@@ -46,6 +50,7 @@ private val months = listOf("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AG
 fun CalendarScreen(viewModel: AgroViewModel, onAddActivity: () -> Unit) {
     val activities by viewModel.activities.collectAsState()
     var filter by remember { mutableStateOf("Todos") }
+    var toDelete by remember { mutableStateOf<CalendarActivityEntity?>(null) }
     val filters = listOf("Todos", "Siembra", "Riego", "Fertilizacion", "Cosecha")
     val visibleActivities = if (filter == "Todos") {
         activities
@@ -78,7 +83,7 @@ fun CalendarScreen(viewModel: AgroViewModel, onAddActivity: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
         }
-        items(visibleActivities) { activity -> ActivityCard(activity) }
+        items(visibleActivities) { activity -> ActivityCard(activity, onDelete = { toDelete = activity }) }
         item {
             Spacer(Modifier.height(16.dp))
             Button(
@@ -92,6 +97,23 @@ fun CalendarScreen(viewModel: AgroViewModel, onAddActivity: () -> Unit) {
                 Text("Agregar actividad")
             }
         }
+    }
+
+    toDelete?.let { activity ->
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text("Eliminar actividad") },
+            text = { Text("¿Seguro que quieres eliminar \"${activity.title}\"? Esta accion no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    toDelete = null
+                    viewModel.deleteActivity(activity.id)
+                }) { Text("Eliminar", color = AgroDanger, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { toDelete = null }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -220,7 +242,7 @@ private fun MonthSelector() {
 }
 
 @Composable
-private fun ActivityCard(activity: CalendarActivityEntity) {
+private fun ActivityCard(activity: CalendarActivityEntity, onDelete: () -> Unit) {
     itemCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(color = tagColor(activity.colorTag).copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp), modifier = Modifier.size(64.dp)) {
@@ -235,6 +257,12 @@ private fun ActivityCard(activity: CalendarActivityEntity) {
                 Text(activity.title, fontWeight = FontWeight.Bold)
                 Text("Cultivo: ${activity.cropName}", color = AgroMuted, fontSize = 12.sp)
             }
+            Text(
+                "✕",
+                color = AgroDanger,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onDelete).padding(8.dp)
+            )
         }
     }
 }

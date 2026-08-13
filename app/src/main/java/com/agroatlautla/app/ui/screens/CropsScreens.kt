@@ -161,6 +161,93 @@ fun AddCropScreen(viewModel: AgroViewModel, onBack: () -> Unit, onSaved: () -> U
 }
 
 @Composable
+fun EditCropScreen(viewModel: AgroViewModel, cropId: String, onBack: () -> Unit, onSaved: () -> Unit) {
+    val crops by viewModel.crops.collectAsState()
+    val crop = crops.firstOrNull { it.id == cropId }
+    var name by remember(cropId) { mutableStateOf(crop?.name ?: "") }
+    var sowDate by remember(cropId) { mutableStateOf(crop?.sowDate ?: "") }
+    var surfaceArea by remember(cropId) { mutableStateOf((crop?.surfaceArea ?: "").removeSuffix(" ha")) }
+    var irrigation by remember(cropId) { mutableStateOf(crop?.irrigationType ?: irrigationTypes.first()) }
+    var notes by remember(cropId) { mutableStateOf(crop?.notes ?: "") }
+    val canSave = name.isNotBlank() && sowDate.isNotBlank()
+
+    LaunchedEffect(Unit) { viewModel.clearMessage() }
+
+    ScreenWithHeader(title = "Editar Cultivo", onBack = onBack) {
+        if (crop == null) {
+            item { itemCard { Text("Cultivo no encontrado", color = AgroMuted) } }
+        } else {
+            item {
+                itemCard {
+                    Column {
+                        MessageBanner(viewModel.message)
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Nombre del cultivo *") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = sowDate,
+                            onValueChange = { sowDate = it },
+                            label = { Text("Fecha de siembra *") },
+                            placeholder = { Text("Ej: 15 Mar 2026") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = surfaceArea,
+                            onValueChange = { surfaceArea = it },
+                            label = { Text("Superficie (ha)") },
+                            placeholder = { Text("Ej: 2.5") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text("Tipo de riego", color = AgroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            irrigationTypes.take(3).forEach { type ->
+                                FilterChip(
+                                    selected = irrigation == type,
+                                    onClick = { irrigation = type },
+                                    label = { Text(type, fontSize = 11.sp) }
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            label = { Text("Notas adicionales") },
+                            placeholder = { Text("Observaciones del terreno") },
+                            minLines = 3,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+            item {
+                Button(
+                    onClick = {
+                        viewModel.updateCrop(cropId, name, sowDate, irrigation, notes, surfaceArea, onSaved)
+                    },
+                    enabled = canSave,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(54.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AgroGreen),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Guardar cambios", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SummaryStrip(first: String, second: String, third: String) {
     itemCard {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
