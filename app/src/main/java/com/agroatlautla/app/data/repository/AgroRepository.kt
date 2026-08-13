@@ -16,6 +16,7 @@ class AgroRepository(
     private val database: AgroDatabase
 ) {
     private val cloudRepository = CloudRepository(context)
+    private val prefs = context.getSharedPreferences("agroatlautla_local", Context.MODE_PRIVATE)
 
     val crops: Flow<List<CropEntity>> = database.cropDao().observeAll()
     val activities: Flow<List<CalendarActivityEntity>> = database.calendarActivityDao().observeAll()
@@ -24,7 +25,9 @@ class AgroRepository(
     val pendingSync: Flow<List<SyncQueueEntity>> = database.syncQueueDao().observePending()
 
     suspend fun seed() {
+        if (prefs.getBoolean(KEY_SEEDED, false)) return
         SeedData.ensureInitialData(database)
+        prefs.edit().putBoolean(KEY_SEEDED, true).apply()
     }
 
     suspend fun addCrop(
@@ -98,6 +101,7 @@ class AgroRepository(
         if (!cloudRepository.isConfigured()) error(FirebaseConfig.MissingConfigMessage)
 
         cloudRepository.downloadCrops(uid).forEach { cloud ->
+            if (database.syncQueueDao().hasPendingDelete("crops", cloud.id) > 0) return@forEach
             val local = database.cropDao().getById(cloud.id)
             when {
                 local == null -> {
@@ -174,8 +178,11 @@ class AgroRepository(
         val pending = database.syncQueueDao().getPending()
         pending.forEach { item ->
             when (item.entityName) {
-                "crops" -> database.cropDao().getById(item.entityId)?.let {
-                    cloudRepository.uploadCrop(uid, it)
+                "crops" -> when (item.action) {
+                    "delete" -> cloudRepository.deleteCrop(uid, item.entityId)
+                    else -> database.cropDao().getById(item.entityId)?.let {
+                        cloudRepository.uploadCrop(uid, it)
+                    }
                 }
                 "calendar_activities" -> database.calendarActivityDao().getById(item.entityId)?.let {
                     cloudRepository.uploadActivity(uid, it)
@@ -192,5 +199,17 @@ class AgroRepository(
         pending.size
     }
 
-    suspend fun pendingCount(): Int = database.syncQueueDao().pendingCount()
+    suspend fun deleteCrop(cropId: String) {
+        val crop = database.cropDao().getById(cropId) ?: return
+        if (!crop.needsSync) {
+            database.syncQueueDao().insert(
+                SyncQueueEntity(entityName = "crops", entityId = cropId, action = "delete")
+            )
+        }
+        database.cropDao().deleteById(cropId)
+    }
+
+    companion object {
+        private const val KEY_SEEDED = "demo_seeded"
+    }
 }

@@ -121,7 +121,8 @@ fun AgroApp(viewModel: AgroViewModel) {
                 CropDetailScreen(
                     viewModel = viewModel,
                     cropId = entry.arguments?.getString("cropId") ?: "",
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onDeleted = { navController.popBackStack() }
                 )
             }
             composable("calendar") {

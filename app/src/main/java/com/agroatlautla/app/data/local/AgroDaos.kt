@@ -41,6 +41,9 @@ interface CropDao {
 
     @Query("SELECT * FROM crops WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): CropEntity?
+
+    @Query("DELETE FROM crops WHERE id = :id")
+    suspend fun deleteById(id: String)
 }
 
 @Dao
@@ -125,4 +128,7 @@ interface SyncQueueDao {
 
     @Query("UPDATE sync_queue SET status = 'synced', syncedAt = :syncedAt WHERE id = :id")
     suspend fun markSynced(id: Int, syncedAt: Long)
+
+    @Query("SELECT COUNT(*) FROM sync_queue WHERE entityName = :name AND entityId = :id AND action = 'delete' AND status = 'pending'")
+    suspend fun hasPendingDelete(name: String, id: String): Int
 }

@@ -43,6 +43,14 @@ class CloudRepository(private val context: Context) {
             .await()
     }
 
+    suspend fun deleteCrop(uid: String, cropId: String) {
+        firestore(uid)
+            .collection("crops")
+            .document(cropId)
+            .delete()
+            .await()
+    }
+
     suspend fun downloadCrops(uid: String): List<CropEntity> {
         return firestore(uid).collection("crops").get().await().documents.mapNotNull { doc ->
             val id = doc.getString("id") ?: doc.id

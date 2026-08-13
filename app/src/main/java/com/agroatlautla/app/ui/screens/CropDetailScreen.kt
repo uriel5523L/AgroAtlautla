@@ -3,13 +3,23 @@ package com.agroatlautla.app.ui.screens
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,16 +32,23 @@ import com.agroatlautla.app.ui.screens.components.InfoRow
 import com.agroatlautla.app.ui.screens.components.MiniRoundIcon
 import com.agroatlautla.app.ui.screens.components.ScreenWithHeader
 import com.agroatlautla.app.ui.screens.components.itemCard
+import com.agroatlautla.app.ui.theme.AgroDanger
 import com.agroatlautla.app.ui.theme.AgroGreen
 import com.agroatlautla.app.ui.theme.AgroMuted
 import com.agroatlautla.app.ui.theme.AgroText
 
 @Composable
-fun CropDetailScreen(viewModel: AgroViewModel, cropId: String, onBack: () -> Unit) {
+fun CropDetailScreen(
+    viewModel: AgroViewModel,
+    cropId: String,
+    onBack: () -> Unit,
+    onDeleted: () -> Unit = onBack
+) {
     val crops by viewModel.crops.collectAsState()
     val activities by viewModel.activities.collectAsState()
     val crop = crops.firstOrNull { it.id == cropId }
     val cropActivities = crop?.let { active -> activities.filter { it.cropName == active.name } } ?: emptyList()
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     ScreenWithHeader(title = "Detalle del Cultivo", onBack = onBack) {
         if (crop == null) {
@@ -91,7 +108,34 @@ fun CropDetailScreen(viewModel: AgroViewModel, cropId: String, onBack: () -> Uni
                     }
                 }
             }
+            item {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AgroDanger),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Eliminar cultivo", fontWeight = FontWeight.Bold)
+                }
+            }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar cultivo") },
+            text = { Text("¿Seguro que quieres eliminar \"${crop?.name}\"? Esta accion no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    viewModel.deleteCrop(cropId, onDeleted)
+                }) { Text("Eliminar", color = AgroDanger, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

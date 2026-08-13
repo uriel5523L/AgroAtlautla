@@ -159,6 +159,14 @@ class AgroViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteCrop(cropId: String, onDeleted: () -> Unit = {}) {
+        viewModelScope.launch {
+            agroRepository.deleteCrop(cropId)
+            message = "Cultivo eliminado. La baja se sincronizara con tu cuenta."
+            onDeleted()
+        }
+    }
+
     fun syncNow() {
         viewModelScope.launch {
             refreshNetworkStatus()
