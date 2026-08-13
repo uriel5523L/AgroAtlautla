@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgroAtlautla - Apoyo digital para productores</title>
+  <style>
+    :root { --green: #2F7D51; --dark: #235A3E; --bg: #F6F8F4; --text: #21362B; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--dark); color: white; padding: 40px 20px; text-align: center; }
+    header h1 { font-size: 2rem; margin-bottom: 6px; }
+    header p { opacity: .85; }
+    main { max-width: 720px; margin: 0 auto; padding: 30px 20px; }
+    .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    h2 { color: var(--dark); margin-bottom: 12px; font-size: 1.15rem; }
+    p { line-height: 1.55; margin-bottom: 10px; }
+    code { background: #ECEFED; padding: 3px 7px; border-radius: 6px; font-size: .9rem; word-break: break-all; }
+    .btn { display: block; text-align: center; background: var(--green); color: white; text-decoration: none; font-weight: bold; padding: 14px; border-radius: 12px; margin-top: 14px; }
+    .btn:hover { background: var(--dark); }
+    ol { margin-left: 20px; line-height: 1.7; }
+    footer { text-align: center; color: #6E7F75; font-size: .85rem; padding: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AgroAtlautla</h1>
+    <p>Apoyo digital para productores del campo en Atlautla, Estado de Mexico</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Descargar la aplicacion</h2>
+      <p>Control de cultivos, calendario agricola, plagas, gastos y reportes. Funciona en linea y sin conexion, con sincronizacion a tu cuenta.</p>
+      <a class="btn" href="fdroid/repo/agroatlautla_1.apk">Descargar APK (v1.0)</a>
+    </div>
+
+    <div class="card">
+      <h2>Instalar desde el cliente F-Droid</h2>
+      <p>Agrega este repositorio en la aplicacion <strong>F-Droid</strong> para recibir actualizaciones:</p>
+      <ol>
+        <li>Instala <a href="https://f-droid.org/" target="_blank" rel="noopener">F-Droid</a> en tu telefono.</li>
+        <li>Abre F-Droid &rarr; <strong>Ajustes</strong> &rarr; <strong>Repositorios</strong>.</li>
+        <li>Presiona <strong>+</strong> y agrega esta URL:</li>
+      </ol>
+      <p style="margin-top:10px"><code>https://uriel5523L.github.io/AgroAtlautla/fdroid/repo</code></p>
+    </div>
+
+    <div class="card">
+      <h2>Codigo abierto</h2>
+      <p>Proyecto publicado bajo licencia GPL-3.0. Compila desde <a href="https://github.com/uriel5523L/AgroAtlautla" target="_blank" rel="noopener">github.com/uriel5523L/AgroAtlautla</a>.</p>
+    </div>
+  </main>
+  <footer>AgroAtlautla &mdash; temporada 2026</footer>
+</body>
+</html>
