@@ -21,6 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.agroatlautla.app.data.local.CalendarActivityEntity
@@ -42,25 +44,46 @@ import com.agroatlautla.app.ui.theme.AgroGreen
 import com.agroatlautla.app.ui.theme.AgroInfo
 import com.agroatlautla.app.ui.theme.AgroMuted
 import com.agroatlautla.app.ui.theme.AgroWarning
+import java.util.Calendar
 
 private val activityTypes = listOf("Siembra", "Riego", "Fertilizacion", "Cosecha", "Actividad")
 private val months = listOf("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
+private val monthLongNames = listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
 
 @Composable
 fun CalendarScreen(viewModel: AgroViewModel, onAddActivity: () -> Unit) {
     val activities by viewModel.activities.collectAsState()
     var filter by remember { mutableStateOf("Todos") }
     var toDelete by remember { mutableStateOf<CalendarActivityEntity?>(null) }
+    var monthIndex by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(activities, monthIndex) {
+        if (monthIndex == null) {
+            monthIndex = activities.maxByOrNull {
+                months.indexOf(it.month) * 100 + it.day
+            }?.let { months.indexOf(it.month) } ?: Calendar.getInstance().get(Calendar.MONTH)
+        }
+    }
+
+    val selectedMonth = monthIndex ?: Calendar.getInstance().get(Calendar.MONTH)
     val filters = listOf("Todos", "Siembra", "Riego", "Fertilizacion", "Cosecha")
+    val monthActivities = activities.filter { it.month == months[selectedMonth] }
     val visibleActivities = if (filter == "Todos") {
-        activities
+        monthActivities
     } else {
-        activities.filter { it.type == filter }
+        monthActivities.filter { it.type == filter }
     }
 
     ScreenWithHeader(title = "Calendario Agricola") {
         item {
-            MonthSelector()
+            MonthSelector(
+                monthLabel = monthLongNames[selectedMonth],
+                count = monthActivities.size,
+                isCurrent = selectedMonth == Calendar.getInstance().get(Calendar.MONTH),
+                onPrev = { monthIndex = (selectedMonth + 11) % 12 },
+                onNext = { monthIndex = (selectedMonth + 1) % 12 },
+                onToday = { monthIndex = Calendar.getInstance().get(Calendar.MONTH) }
+            )
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 filters.take(3).forEach { item ->
@@ -82,6 +105,18 @@ fun CalendarScreen(viewModel: AgroViewModel, onAddActivity: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(12.dp))
+        }
+        if (visibleActivities.isEmpty()) {
+            item {
+                itemCard {
+                    Text(
+                        "Sin actividades en ${monthLongNames[selectedMonth]}. Pulsa \"Agregar actividad\" o cambia de mes.",
+                        color = AgroMuted,
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp
+                    )
+                }
+            }
         }
         items(visibleActivities) { activity -> ActivityCard(activity, onDelete = { toDelete = activity }) }
         item {
@@ -231,12 +266,37 @@ private fun MonthChip(selected: Boolean, label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun MonthSelector() {
+private fun MonthSelector(
+    monthLabel: String,
+    count: Int,
+    isCurrent: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onToday: () -> Unit
+) {
     Surface(color = AgroGreen, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("<", color = Color.White, fontWeight = FontWeight.Bold)
-            Text("Junio 2026", color = Color.White, fontWeight = FontWeight.Bold)
-            Text(">", color = Color.White, fontWeight = FontWeight.Bold)
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("<", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.clickable(onClick = onPrev).padding(10.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(monthLabel, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    if (count == 1) "1 actividad" else "$count actividades",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 12.sp
+                )
+                if (!isCurrent) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Hoy",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable(onClick = onToday).padding(4.dp)
+                    )
+                }
+            }
+            Text(">", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.clickable(onClick = onNext).padding(10.dp))
         }
     }
 }
